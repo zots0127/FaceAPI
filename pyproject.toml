@@ -1,0 +1,80 @@
+[project]
+name = "faceapi"
+version = "1.0.0"
+description = "基于 MediaPipe + YOLO 的智能人脸检测API，支持多模型和智能重叠裁剪"
+authors = [
+    {name = "FaceAPI Team", email = "team@faceapi.com"}
+]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["face-detection", "mediapipe", "yolo", "computer-vision", "api"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "mediapipe>=0.10.9",
+    "opencv-python>=4.8.1.78",
+    "numpy>=1.24.3",
+    "Pillow>=10.1.0",
+    "python-multipart>=0.0.6",
+    "pydantic>=2.5.0",
+    "ultralytics>=8.0.0",
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "click>=8.0.0",
+    "tqdm>=4.64.0",
+    "gradio>=5.49.1",
+]
+
+[project.optional-dependencies]
+gradio = [
+    "gradio>=4.0.0",
+    "matplotlib>=3.5.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "build>=0.10.0",
+    "twine>=4.0.0",
+]
+all = [
+    "faceapi[gradio,dev]",
+]
+
+[project.scripts]
+faceapi = "faceapi.cli:main"
+faceapi-server = "faceapi.server:main"
+faceapi-gradio = "faceapi.gradio_app:main"
+
+[project.urls]
+Homepage = "https://github.com/faceapi/faceapi"
+Documentation = "https://github.com/faceapi/faceapi#readme"
+Repository = "https://github.com/faceapi/faceapi.git"
+"Bug Tracker" = "https://github.com/faceapi/faceapi/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
