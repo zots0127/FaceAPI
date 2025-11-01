@@ -368,7 +368,29 @@ FaceAPI/
 
 ### 常见问题
 
-1. **模型加载失败**
+1. **安装脚本在Linux上失败**
+   ```bash
+   # 确保安装了curl
+   which curl || apt-get install curl   # Ubuntu/Debian
+   which curl || yum install curl       # CentOS/RHEL
+
+   # 重新运行安装
+   ./install.sh
+   ```
+
+2. **uv命令未找到**
+   ```bash
+   # 手动添加到PATH
+   export PATH="$HOME/.local/bin:$PATH"
+
+   # 或者重新加载shell配置
+   source ~/.bashrc  # 或 ~/.zshrc
+
+   # 验证uv安装
+   uv --version
+   ```
+
+3. **模型加载失败**
    ```bash
    # 检查模型文件
    ls -la models/
@@ -380,18 +402,27 @@ FaceAPI/
    uv run python download_models.py --list
    ```
 
-2. **GPU加速问题**
+4. **依赖安装失败 (uv不可用)**
+   ```bash
+   # 使用pip作为备选方案
+   pip install -r requirements.txt
+
+   # 或者在install.sh中会自动fallback到pip
+   ./install.sh
+   ```
+
+5. **GPU加速问题**
    ```bash
    # 检查CUDA可用性
    uv run python -c "import torch; print(torch.cuda.is_available())"
    ```
 
-3. **内存不足**
+6. **内存不足**
    - 使用较小的模型 (face11n, face11s)
    - 调整智能裁剪参数
    - 减少并发请求数
 
-4. **性能优化**
+7. **性能优化**
    - 启用智能裁剪处理大图像
    - 根据应用场景选择合适的模型
    - 调整置信度阈值平衡精度和速度

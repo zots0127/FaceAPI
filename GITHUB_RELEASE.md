@@ -177,7 +177,14 @@ FaceAPI/
 ## 🐛 常见问题
 
 ### Q: 如何解决依赖安装问题？
-A: 使用一键安装脚本 `./install.sh`，它会自动检测Python版本并安装所有依赖。
+A: 使用一键安装脚本 `./install.sh`，它会自动检测Python版本并安装所有依赖。脚本支持uv和pip两种安装方式，会自动fallback。
+
+### Q: Linux服务器上安装失败怎么办？
+A: 确保:
+1. 安装了curl: `apt-get install curl` (Ubuntu) 或 `yum install curl` (CentOS)
+2. Python版本 >= 3.10
+3. 重新运行: `./install.sh`
+4. 如果uv命令未找到，手动添加PATH: `export PATH="$HOME/.local/bin:$PATH"`
 
 ### Q: 模型文件加载失败怎么办？
 A: 运行 `uv run python download_models.py --model all` 重新下载所有模型，或使用 `uv run python download_models.py --list` 检查模型状态。

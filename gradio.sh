@@ -5,6 +5,15 @@
 echo "🎨 启动 FaceAPI Gradio Web界面"
 echo "================================="
 
+# 确保 uv 在 PATH 中
+export PATH="$HOME/.local/bin:$PATH"
+
+# 检查 uv 是否安装
+if ! command -v uv &> /dev/null; then
+    echo "❌ uv 未安装，请先运行: ./install.sh"
+    exit 1
+fi
+
 # 检查Python
 if ! command -v python3 &> /dev/null; then
     echo "❌ Python3 未安装"
@@ -24,4 +33,4 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 echo "🌐 启动Gradio Web界面..."
 echo "📡 访问地址: http://localhost:7860"
 echo ""
-python -m faceapi.gradio_app --host 0.0.0.0 --port 7860
+uv run python -m faceapi.gradio_app --host 0.0.0.0 --port 7860

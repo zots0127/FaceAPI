@@ -85,15 +85,34 @@ main() {
         print_info "正在安装 uv..."
         if command_exists curl; then
             curl -LsSf https://astral.sh/uv/install.sh | sh
-            # 重新加载环境变量
-            export PATH="$HOME/.cargo/bin:$PATH"
+            # 重新加载环境变量 - uv安装在 $HOME/.local/bin
+            export PATH="$HOME/.local/bin:$PATH"
             if [ -f "$HOME/.bashrc" ]; then
-                echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$HOME/.bashrc"
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
             fi
             if [ -f "$HOME/.zshrc" ]; then
-                echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$HOME/.zshrc"
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+            fi
+            if [ -f "$HOME/.profile" ]; then
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.profile"
             fi
             print_success "uv 安装完成"
+
+            # 重新检测uv是否可用
+            if command_exists uv; then
+                UV_VERSION=$(uv --version)
+                print_success "uv 验证成功: $UV_VERSION"
+            else
+                print_error "uv 安装后无法找到，尝试重新加载PATH"
+                export PATH="$HOME/.local/bin:$PATH"
+                if command_exists uv; then
+                    UV_VERSION=$(uv --version)
+                    print_success "uv 重新加载成功: $UV_VERSION"
+                else
+                    print_error "uv 安装失败，请手动安装"
+                    exit 1
+                fi
+            fi
         else
             print_error "curl 未安装，无法自动安装 uv"
             echo "请手动安装 uv: https://docs.astral.sh/uv/getting-started/installation/"
@@ -120,7 +139,7 @@ main() {
 
     # 下载模型文件
     print_info "下载 YOLO 模型文件..."
-    if uv run python download_models.py --list; then
+    if command_exists uv && uv run python download_models.py --list; then
         print_info "开始下载模型..."
         if uv run python download_models.py --model all; then
             print_success "所有模型下载完成"
@@ -129,8 +148,19 @@ main() {
             print_info "您可以稍后运行: uv run python download_models.py"
         fi
     else
-        print_warning "模型下载脚本运行失败"
-        print_info "您可以稍后手动下载模型文件"
+        print_warning "模型下载脚本运行失败，尝试使用 pip"
+        if pip install requests && python download_models.py --list; then
+            print_info "开始下载模型..."
+            if python download_models.py --model all; then
+                print_success "所有模型下载完成"
+            else
+                print_warning "部分模型下载失败，但 FaceAPI 仍可正常工作"
+                print_info "您可以稍后运行: python download_models.py"
+            fi
+        else
+            print_warning "模型下载脚本运行失败"
+            print_info "您可以稍后手动下载模型文件"
+        fi
     fi
 
     # 安装依赖
@@ -138,8 +168,13 @@ main() {
     if uv sync; then
         print_success "依赖安装完成"
     else
-        print_error "依赖安装失败"
-        exit 1
+        print_warning "uv sync 失败，尝试使用 pip 安装"
+        if pip install -r requirements.txt; then
+            print_success "pip 安装完成"
+        else
+            print_error "依赖安装失败"
+            exit 1
+        fi
     fi
 
     # 设置执行权限
