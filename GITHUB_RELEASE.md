@@ -189,6 +189,13 @@ A: 确保:
 ### Q: 模型文件加载失败怎么办？
 A: 运行 `uv run python download_models.py --model all` 重新下载所有模型，或使用 `uv run python download_models.py --list` 检查模型状态。
 
+### Q: OpenCV安装失败怎么办？
+A: install.sh 会自动检测并修复OpenCV问题，包括：
+- 自动卸载有问题的版本
+- 安装opencv-python-headless (适合服务器环境)
+- 如果仍然失败，会提供详细的手动修复指导
+- 重新运行 `./install.sh` 即可自动修复
+
 ### Q: 如何提高检测精度？
 A: 调整置信度阈值到0.3-0.7之间，使用face11x模型获得最高精度。
 

@@ -1094,10 +1094,16 @@ async def benchmark_yolo_models(
         raise HTTPException(status_code=500, detail=f"YOLO 模型基准测试失败: {str(e)}")
 
 if __name__ == "__main__":
+    import os
+
+    # 支持环境变量配置
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
+        host=host,
+        port=port,
+        reload=False,  # 生产环境关闭reload
         log_level="info"
     )

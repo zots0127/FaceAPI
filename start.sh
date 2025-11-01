@@ -45,11 +45,34 @@ fi
 
 # 启动服务
 echo "🌟 启动服务..."
-if command -v uv &> /dev/null && uv run python main.py; then
-    echo "✅ 使用 uv 启动成功"
-elif python main.py; then
-    echo "✅ 使用 python 启动成功"
+
+# 检查端口8000是否被占用
+if command -v lsof &> /dev/null && lsof -i:8000 &> /dev/null; then
+    echo "⚠️ 端口8000已被占用，尝试使用端口8001..."
+    export PORT=8001
 else
-    echo "❌ 服务启动失败"
-    exit 1
+    export PORT=8000
+fi
+
+if command -v uv &> /dev/null; then
+    echo "使用 uv 启动服务 (端口: $PORT)..."
+    if uv run python main.py; then
+        echo "✅ 使用 uv 启动成功"
+    else
+        echo "❌ uv 启动失败，尝试使用 python..."
+        if python main.py; then
+            echo "✅ 使用 python 启动成功"
+        else
+            echo "❌ 服务启动失败"
+            exit 1
+        fi
+    fi
+else
+    echo "使用 python 启动服务 (端口: $PORT)..."
+    if python main.py; then
+        echo "✅ 使用 python 启动成功"
+    else
+        echo "❌ 服务启动失败"
+        exit 1
+    fi
 fi

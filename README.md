@@ -338,7 +338,7 @@ FaceAPI/
 ├── 📄 pyproject.toml                    # 项目配置
 ├── 📄 requirements.txt                  # 依赖列表
 ├── 📄 start.sh                          # 启动脚本
-├── 📄 install.sh                        # 一键安装脚本
+├── 📄 install.sh                        # 一键安装脚本 (集成OpenCV修复)
 ├── 📄 verify_installation.py           # 安装验证脚本
 ├── 📄 download_models.py                # 模型下载脚本
 ├── 📁 faceapi/                          # Python包
@@ -411,18 +411,34 @@ FaceAPI/
    ./install.sh
    ```
 
-5. **GPU加速问题**
+5. **OpenCV 安装失败 (Linux服务器)**
+   ```bash
+   # install.sh 会自动检测并修复OpenCV问题
+   ./install.sh
+
+   # 如果需要手动修复：
+   pip uninstall opencv-python opencv-contrib-python
+   pip install opencv-python-headless
+
+   # Ubuntu/Debian 系统依赖
+   sudo apt-get install libgl1-mesa-glx libglib2.0-0 libsm6 libxext6
+
+   # CentOS/RHEL 系统依赖
+   sudo yum install mesa-libGL glib2 libSM libXext
+   ```
+
+6. **GPU加速问题**
    ```bash
    # 检查CUDA可用性
    uv run python -c "import torch; print(torch.cuda.is_available())"
    ```
 
-6. **内存不足**
+7. **内存不足**
    - 使用较小的模型 (face11n, face11s)
    - 调整智能裁剪参数
    - 减少并发请求数
 
-7. **性能优化**
+8. **性能优化**
    - 启用智能裁剪处理大图像
    - 根据应用场景选择合适的模型
    - 调整置信度阈值平衡精度和速度

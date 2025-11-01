@@ -120,6 +120,28 @@ main() {
         fi
     fi
 
+    # 检查系统依赖 (Linux)
+    if [ "$OS" = "linux" ]; then
+        print_info "检查系统依赖..."
+
+        # 检查必要的系统包管理器
+        if command_exists apt-get; then
+            print_info "检测到apt包管理器，检查系统依赖..."
+            # 检查是否安装了必要的系统包
+            if ! dpkg -l | grep -q libgl1-mesa-glx; then
+                print_info "安装OpenGL库..."
+                apt-get update -qq && apt-get install -y libgl1-mesa-glx libglib2.0-0 || true
+            fi
+            if ! dpkg -l | grep -q libsm6; then
+                print_info "安装X11库..."
+                apt-get install -y libsm6 libxext6 libxrender-dev libfontconfig1 libice6 || true
+            fi
+        elif command_exists yum; then
+            print_info "检测到yum包管理器，检查系统依赖..."
+            yum install -y mesa-libGL glib2 libSM libXext libXrender fontconfig libICE || true
+        fi
+    fi
+
     # 检查并下载模型文件
     print_info "检查模型文件..."
     if [ -d "models" ]; then
@@ -194,28 +216,64 @@ main() {
     # 验证安装
     print_info "验证安装..."
 
+    # 使用正确的命令验证依赖
+    PYTHON_CMD="uv run python"
+    if ! command_exists uv; then
+        PYTHON_CMD="python"
+    fi
+
     # 检查主要依赖
-    if uv run python -c "import fastapi, uvicorn" 2>/dev/null; then
+    if $PYTHON_CMD -c "import fastapi, uvicorn" 2>/dev/null; then
         print_success "FastAPI 和 Uvicorn 安装成功"
     else
         print_error "FastAPI 或 Uvicorn 安装失败"
         exit 1
     fi
 
-    if uv run python -c "import cv2" 2>/dev/null; then
+    if $PYTHON_CMD -c "import cv2" 2>/dev/null; then
         print_success "OpenCV 安装成功"
     else
-        print_error "OpenCV 安装失败"
-        exit 1
+        print_warning "OpenCV 安装失败，这是Linux服务器常见问题"
+        print_info "正在自动修复OpenCV安装..."
+
+        # 卸载可能有问题的版本
+        print_info "卸载旧版本..."
+        pip uninstall -y opencv-python opencv-contrib-python 2>/dev/null || true
+
+        # 安装无GUI版本 (适合服务器环境)
+        print_info "安装OpenCV无GUI版本..."
+        if command_exists uv; then
+            uv add opencv-python-headless 2>/dev/null || pip install opencv-python-headless
+        else
+            pip install opencv-python-headless
+        fi
+
+        # 再次验证
+        if $PYTHON_CMD -c "import cv2; print(f'OpenCV版本: {cv2.__version__}')" 2>/dev/null; then
+            print_success "OpenCV 修复成功！"
+        else
+            print_error "OpenCV 自动修复失败，请手动执行："
+            print_info "  pip uninstall opencv-python opencv-contrib-python"
+            print_info "  pip install opencv-python-headless"
+            print_info "如果仍然失败，可能需要安装系统依赖："
+            if [ "$OS" = "linux" ]; then
+                if command_exists apt-get; then
+                    print_info "  sudo apt-get install libgl1-mesa-glx libglib2.0-0 libsm6 libxext6"
+                elif command_exists yum; then
+                    print_info "  sudo yum install mesa-libGL glib2 libSM libXext"
+                fi
+            fi
+            exit 1
+        fi
     fi
 
-    if uv run python -c "import mediapipe" 2>/dev/null; then
+    if $PYTHON_CMD -c "import mediapipe" 2>/dev/null; then
         print_success "MediaPipe 安装成功"
     else
         print_warning "MediaPipe 安装失败，YOLO 功能仍可用"
     fi
 
-    if uv run python -c "import ultralytics" 2>/dev/null; then
+    if $PYTHON_CMD -c "import ultralytics" 2>/dev/null; then
         print_success "Ultralytics YOLO 安装成功"
     else
         print_error "Ultralytics YOLO 安装失败"
