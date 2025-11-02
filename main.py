@@ -313,6 +313,40 @@ class MultiYOLODetector:
             "models_loaded": len(self.available_models)
         }
 
+    def benchmark_models(
+        self,
+        image: np.ndarray,
+        conf_threshold: float = 0.5,
+        enable_smart_crop: bool = True,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """对已加载的 YOLO 模型执行简单基准测试"""
+
+        if not self.available_models:
+            logger.warning("YOLO 模型未加载，无法执行基准测试")
+            return {}
+
+        results: Dict[str, Any] = {}
+        models_to_test = self.available_models[:limit] if limit else self.available_models
+
+        for model_name in models_to_test:
+            start = time.perf_counter()
+            faces = self.detect_faces(
+                image,
+                model_name=model_name,
+                conf_threshold=conf_threshold,
+                enable_smart_crop=enable_smart_crop,
+            )
+            elapsed_ms = (time.perf_counter() - start) * 1000
+
+            results[model_name] = {
+                "face_count": len(faces),
+                "avg_response_time_ms": elapsed_ms,
+                "detections": faces,
+            }
+
+        return results
+
 
 class MediaPipeFaceDetector:
     """MediaPipe人脸检测器"""
@@ -396,11 +430,52 @@ class MediaPipeFaceDetector:
 
         return landmarks_list
 
+    def get_face_landmarks(self, image: np.ndarray) -> List[Dict[str, Any]]:
+        """MediaPipe 接口兼容方法，返回关键点信息"""
+        return self.get_landmarks(image)
+
+    def draw_faces(self, image: np.ndarray, faces: List[Dict[str, Any]]) -> np.ndarray:
+        """在图像上绘制人脸边界框"""
+        result_image = image.copy()
+
+        for face in faces:
+            x, y, w, h = face["bbox"]
+            confidence = face.get("confidence", 0.0)
+
+            cv2.rectangle(result_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(
+                result_image,
+                f"{confidence:.2f}",
+                (x, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+            )
+
+        return result_image
+
+    def extract_face(self, image: np.ndarray, bbox: List[int], margin: int = 20) -> np.ndarray:
+        """根据检测框提取人脸区域"""
+        x, y, w, h = bbox
+
+        x = max(0, x - margin)
+        y = max(0, y - margin)
+        w = w + 2 * margin
+        h = h + 2 * margin
+
+        img_h, img_w = image.shape[:2]
+        w = min(w, img_w - x)
+        h = min(h, img_h - y)
+
+        return image[y : y + h, x : x + w]
+
 
 # 创建检测器实例
 yolo_detector = MultiYOLODetector()
 mediapipe_detector = MediaPipeFaceDetector()
 face_detector = mediapipe_detector  # 使用MediaPipe检测器作为通用人脸检测器
+multi_yolo_detector = yolo_detector
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -533,7 +608,11 @@ async def detect_faces(
         if model.lower() == "yolo":
             if yolo_detector is None:
                 raise HTTPException(status_code=503, detail="YOLO 模型不可用")
-            faces = yolo_detector.detect_faces(image, conf_threshold)
+            faces = yolo_detector.detect_faces(
+                image,
+                model_name="face11n",
+                conf_threshold=conf_threshold,
+            )
         elif model.lower() == "mediapipe":
             faces = face_detector.detect_faces(image)
         else:

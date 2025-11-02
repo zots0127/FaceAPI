@@ -60,20 +60,20 @@ main() {
         PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
         print_success "Python 已安装: $PYTHON_VERSION"
 
-        # 检查 Python 版本是否 >= 3.10
+        # 检查 Python 版本是否为 3.10.x
         PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d'.' -f1)
         PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d'.' -f2)
 
-        if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 10 ]; then
-            print_success "Python 版本符合要求 (>= 3.10)"
+        if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -eq 10 ]; then
+            print_success "Python 版本符合要求 (= 3.10.x)"
         else
-            print_error "Python 版本不符合要求，需要 >= 3.10，当前版本: $PYTHON_VERSION"
-            echo "请升级 Python 后重试"
+            print_error "Python 版本不符合要求，需要 3.10.x，当前版本: $PYTHON_VERSION"
+            echo "请安装 Python 3.10.x 后重试"
             exit 1
         fi
     else
         print_error "Python3 未安装"
-        echo "请先安装 Python 3.10+ 后重试"
+        echo "请先安装 Python 3.10.x 后重试"
         exit 1
     fi
 
